@@ -10,7 +10,7 @@
     --stack-name panorama-workshop-1
     ```
 1. Visit [SageMaker Notebooks instances page](https://console.aws.amazon.com/sagemaker/home#/notebook-instances) and find "PanoramaWorkshop". Click "Open JupyterLab".
-1. From the file browser pane in left hand side, find "panorama-workshop-env" directory (FIXME : change to proper repo name), and double click it to see the contents of this repository.
+1. From the file browser pane in left hand side, find "aws-panorama-immersion-day" directory, and double click it to see the contents of this repository.
 1. Open "setup-sm.ipynb". This notebook contains required environment setting steps.
 1. From menu bar, select "Run" > "Run All Cells"
 
