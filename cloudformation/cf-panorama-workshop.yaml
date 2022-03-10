@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: AWS Panorama workshop environment
+
+Parameters:
+
+  NotebookName:
+    Type: String
+    Default: PanoramaWorkshop
+    Description: Enter the name of the SageMaker notebook instance.
+
+  VolumeSize:
+    Type: Number
+    Default: 32
+    MinValue: 5
+    MaxValue: 16384
+    ConstraintDescription: Must be an integer between 5 (GB) and 16384 (16 TB).
+    Description: Enter the size of the EBS volume in GB.
+
+Resources:
+  # SageMaker Execution Role
+  PanoramaWorkshopNotebookIamRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/IAMFullAccess"
+      Policies: 
+        - 
+          PolicyName: "PanoramaWorkshopNotebookPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action: "panorama:*"
+                Resource: "*"
+
+  # SageMaker notebook
+  PanoramaWorkshopNotebookInstance:
+    Type: "AWS::SageMaker::NotebookInstance"
+    Properties:
+
+      InstanceType: "ml.p3.2xlarge"
+      #InstanceType: "ml.t2.medium" # for testing
+      
+      PlatformIdentifier : "notebook-al2-v1"
+
+      NotebookInstanceName: !Ref NotebookName
+      RoleArn: !GetAtt PanoramaWorkshopNotebookIamRole.Arn
+      VolumeSizeInGB: !Ref VolumeSize
+
+      # Need to be replaced with official workshop repository      
+      DefaultCodeRepository: https://github.com/shimomut/panorama-workshop-env.git
+
+  # S3 bucket for Test Utility's model compilation
+  PanoramaWorkshopBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: # panorama-workshop-{aws account id}
+        !Join
+        - ''
+        - - 'panorama-workshop-'
+          - !Ref AWS::AccountId
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets : TRUE
+
