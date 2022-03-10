@@ -52,7 +52,7 @@ Resources:
     Properties:
 
       InstanceType: "ml.p3.2xlarge"
-      #InstanceType: "ml.t2.medium" # for testing
+      #InstanceType: "ml.t2.medium" # for testing with cheaper instance type without GPU
       
       PlatformIdentifier : "notebook-al2-v1"
 
@@ -60,8 +60,8 @@ Resources:
       RoleArn: !GetAtt PanoramaWorkshopNotebookIamRole.Arn
       VolumeSizeInGB: !Ref VolumeSize
 
-      # Need to be replaced with official workshop repository      
-      DefaultCodeRepository: https://github.com/shimomut/panorama-workshop-env.git
+      # This repository is still private. Uncomment following line once it become public.
+      # DefaultCodeRepository: https://github.com/aws-samples/aws-panorama-immersion-day.git
 
   # S3 bucket for Test Utility's model compilation
   PanoramaWorkshopBucket:
