@@ -20,7 +20,7 @@ class Application(panoramasdk.node):
             
             if self.frame_count==0:
                 for i_media, media in enumerate(media_list):
-                    print( f"media[{i_media}] : media.image.dtype={media.image.dtype}, media.image.shape={stream.image.shape}", flush=True )
+                    print( f"media[{i_media}] : media.image.dtype={media.image.dtype}, media.image.shape={media.image.shape}", flush=True )
 
             # put video output to HDMI
             self.outputs.video_out.put(media_list)

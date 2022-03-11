@@ -22,7 +22,7 @@ class Application(panoramasdk.node):
         
         while True:
             
-            print(f"Frame : {self.frame_count}")
+            print( f"Frame : {self.frame_count}", flush=True )
             
             # get video frames from camera inputs 
             media_list = self.inputs.video_in.get()
@@ -35,7 +35,9 @@ class Application(panoramasdk.node):
                 
                 detected_boxes = self.detect_people( image_formatted )
                 #print(detected_boxes)
-                
+
+                print( f"Detected {len(detected_boxes)} people.", flush=True )
+
                 self.render_boxes( media.image, detected_boxes )
                 
             # put video output to HDMI
@@ -43,15 +45,19 @@ class Application(panoramasdk.node):
             
             self.frame_count += 1
 
+    # convert video frame from camera to model input data
     def format_model_input( self, image ):
         
+        # scale to resolution expected by the model
         image = cv2.resize( image, model_input_resolution )
 
+        # uint8 -> float32
         image = image.astype(np.float32) / 255.0
+
+        # [480,600,3] -> [1,3,480,600]
         B = image[:, :, 0]
         G = image[:, :, 1]
         R = image[:, :, 2]
-
         image = [[[], [], []]]
         image[0][0] = R
         image[0][1] = G
@@ -59,6 +65,7 @@ class Application(panoramasdk.node):
         
         return np.asarray(image)
 
+    # run people detection, and return detected bounding boxes
     def detect_people( self, data ):
         
         detected_boxes = []
@@ -67,6 +74,7 @@ class Application(panoramasdk.node):
         score_threshold = 0.5
         klass_person = 0
         
+        # call people detection model
         people_detection_results = self.call( {"data":data}, model_node_name )
         
         classes, scores, boxes = people_detection_results
@@ -75,6 +83,7 @@ class Application(panoramasdk.node):
         assert scores.shape == (1,100,1)
         assert boxes.shape == (1,100,4)
         
+        # scale bounding box to 0.0 ~ 1.0 space
         def to_01_space( box ):
             return box / np.array([
                 model_input_resolution[0], 
@@ -83,6 +92,7 @@ class Application(panoramasdk.node):
                 model_input_resolution[1] 
             ])
         
+        # gather bounding boxes to return
         for klass, score, box in zip( classes[0], scores[0], boxes[0] ):
             if klass[0] == klass_person:
                 if score[0] >= score_threshold:
@@ -91,16 +101,17 @@ class Application(panoramasdk.node):
 
         return detected_boxes
     
+    # render bounding boxes
     def render_boxes( self, image, boxes ):
         
         for box in boxes:
             
+            # scale 0.0-1.0 space to camera image resolution
             h = image.shape[0]
             w = image.shape[1]
             box = (box * np.array([ w, h, w, h ])).astype(int)
             
-            print(box)
-            
+            # render red rectancle
             cv2.rectangle( 
                 image, 
                 tuple(box[0:2]),
