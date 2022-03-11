@@ -1,14 +1,8 @@
 __pycache__/
 .ipynb_checkpoints/
+.vscode/
 
-/cmake-3.*.tar.gz
-/cmake-3.*/
 /neo-ai-dlr/
-/apache-mxnet-src-*.tar.gz
-/apache-mxnet-src-*/
-/glibc-*/
-/glibc-*.tar.gz
-/glibc-*.tar.gz.*
 models/
 /videos/
 *.log
