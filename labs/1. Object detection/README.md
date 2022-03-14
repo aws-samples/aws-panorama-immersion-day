@@ -145,7 +145,7 @@ In this Lab, as the first step, we create a simplest one-line application "Hello
 
 ## Video pass-through application
 
-In this section, we extend the application to "Video pass-through" application which receives video frames and just pass-through to HDMI output. You will learn how to create Camera node and DataSink node, how to connect those nodes with Code node, and how to run main loop by calling panoramasdk APIs.
+In this section, as the second step, we extend the application to "Video pass-through" application which receives video frames and just pass-through to HDMI output. You will learn how to create Camera node and DataSink node, how to connect those nodes with Code node, and how to run main loop by calling panoramasdk APIs.
 
 > Note: On the Test Utility, camera input is simulated with static video file, and HDMI output is simulated by generating PNG files.
 
@@ -276,15 +276,349 @@ In this section, we extend the application to "Video pass-through" application w
 
 ## People detection application
 
-(drafting)
+In this section, we finally extend the application to "People detection" application which detect people in the video frames, and render bounding boxes on HDMI output. You will learn how to prepare pre-trained model by exporting from model zoo, how to create a Model node, how to compile the model for Test Utility, and how to call model inference process by calling panoramasdk API.
 
-## Deployment to real device
+1. Export 'yolo3_mobilenet1.0_coco' from GluonCV's model zoo.
 
-(drafting)
+    This Lab uses pre-trained model exported from GluonCV's model zoo. Please run following cell to export 'yolo3_mobilenet1.0_coco'.
 
-## Clean up
+    ``` python
+    def export_model_and_create_targz( prefix, name, model ):
+        os.makedirs( prefix, exist_ok=True )
+        gluoncv.utils.export_block( os.path.join( prefix, name ), model, preprocess=False, layout="CHW" )
 
-(drafting)
+        tar_gz_filename = f"{prefix}/{name}.tar.gz"
+        with tarfile.open( tar_gz_filename, "w:gz" ) as tgz:
+            tgz.add( f"{prefix}/{name}-symbol.json", f"{name}-symbol.json" )
+            tgz.add( f"{prefix}/{name}-0000.params", f"{name}-0000.params" )
+            
+        print( f"Exported : {tar_gz_filename}" )
+        
+    # Export object detection model. Reset the classes for human detection only.
+    people_detection_model = gluoncv.model_zoo.get_model('yolo3_mobilenet1.0_coco', pretrained=True)
+    people_detection_model.reset_class(["person"], reuse_weights=['person'])
+    export_model_and_create_targz( "models", "yolo3_mobilenet1.0_coco_person", people_detection_model )
+    ```
+
+    > Note: `reset_class()` used here in order to detect only people faster.
+
+    Exported model data is saved under "models/" directory.
+    About the pre-trained model more in detail, please see [this GluonCV page](https://cv.gluon.ai/model_zoo/detection.html).
+
+1. Add exported model files in the model package with "panorama-cli create-package --type Model" command.
+
+    ``` python
+    model_package_name = f"{app_name}_model"
+    model_package_version = "1.0"
+    people_detection_model_name = "people_detection_model"
+
+    !cd {app_name} && panorama-cli create-package --type Model --name {model_package_name} --version {code_package_version}
+    ```
+
+1. Manually edit the model descriptor file, and specify the name of ML framework ("MXNET"), input data name ("data") and input data shape ( [1, 3, 480, 600] ).
+
+    1. Open "lab1/packages/{account_id}-lab1_model-1.0/descriptor.py" by text editor.
+    1. Edit the contents as below:
+
+        ``` python
+        {
+            "mlModelDescriptor": {
+                "envelopeVersion": "2021-01-01",
+                "framework": "MXNET",
+                "inputs": [
+                    {
+                        "name": "data",
+                        "shape": [ 1, 3, 480, 600 ]
+                    }
+                ]
+            }
+        }
+        ```
+
+1. Add the exported model data file and editted descriptor file with "panorama-cli add-raw-model" command.
+
+    ``` python
+    !cd {app_name} && panorama-cli add-raw-model \
+        --model-asset-name {people_detection_model_name} \
+        --model-local-path ../models/yolo3_mobilenet1.0_coco_person.tar.gz \
+        --descriptor-path packages/{account_id}-{model_package_name}-{model_package_version}/descriptor.json \
+        --packages-path packages/{account_id}-{model_package_name}-{model_package_version}
+    ```
+
+1. Compile the model  
+
+    'panorama_test_utility_compile.py' is the Test Utility "Compile Model" script. You can use this python script either on notebook environment or on regular command-line terminal.
+
+    > Note: This Model compilation is needed just for Test Utility. For real hardware, the model compilation is done automatically as a part of application deployment process. 
+
+    ``` python
+    people_detection_model_data_shape = '{"data":[1,3,480,600]}'
+
+    %run ../common/test_utility/panorama_test_utility_compile.py \
+    \
+    --s3-model-location s3://{s3_bucket}/panorama-workshop/{app_name} \
+    \
+    --model-node-name {people_detection_model_name} \
+    --model-file-basename ./models/yolo3_mobilenet1.0_coco_person \
+    --model-data-shape '{people_detection_model_data_shape}' \
+    --model-framework MXNET
+    ```
+
+1. Manually edit the app.py, with following code.
+
+    ``` python
+    import numpy as np
+    import cv2
+
+    import panoramasdk
+
+    model_input_resolution = (600,480)        
+    box_color = (0,0,255)
+    box_thickness = 1
+
+    # application class
+    class Application(panoramasdk.node):
+        
+        # initialize application
+        def __init__(self):
+            
+            super().__init__()
+            
+            self.frame_count = 0
+
+        # run top-level loop of application  
+        def run(self):
+            
+            while True:
+                
+                print( f"Frame : {self.frame_count}", flush=True )
+                
+                # get video frames from camera inputs 
+                media_list = self.inputs.video_in.get()
+                
+                for i_media, media in enumerate(media_list):
+                    print( f"media[{i_media}] : media.image.dtype={media.image.dtype}, media.image.shape={media.image.shape}", flush=True )
+
+                    # pass the video frame, and get formatted data for model input
+                    image_formatted = self.format_model_input(media.image)
+                    
+                    # pass the formatted model input data, run people detection, and get detected bounding boxes
+                    detected_boxes = self.detect_people( image_formatted )
+                    
+                    # render the detected bounding boxes on the video frame
+                    self.render_boxes( media.image, detected_boxes )
+                    
+                # put video output to HDMI
+                self.outputs.video_out.put(media_list)
+                
+                self.frame_count += 1
+
+        # convert video frame from camera to model input data
+        def format_model_input( self, image ):
+            
+            # scale to resolution expected by the model
+            image = cv2.resize( image, model_input_resolution )
+
+            # uint8 -> float32
+            image = image.astype(np.float32) / 255.0
+
+            # [480,600,3] -> [1,3,480,600]
+            B = image[:, :, 0]
+            G = image[:, :, 1]
+            R = image[:, :, 2]
+            image = [[[], [], []]]
+            image[0][0] = R
+            image[0][1] = G
+            image[0][2] = B
+            
+            return np.asarray(image)
+
+        # run people detection, and return detected bounding boxes
+        def detect_people( self, data ):
+            
+            detected_boxes = []
+            
+            model_node_name = "people_detection_model"
+            score_threshold = 0.5
+            klass_person = 0
+            
+            # call people detection model
+            people_detection_results = self.call( {"data":data}, model_node_name )
+            
+            classes, scores, boxes = people_detection_results
+
+            assert classes.shape == (1,100,1)
+            assert scores.shape == (1,100,1)
+            assert boxes.shape == (1,100,4)
+            
+            # scale bounding box to 0.0 ~ 1.0 space
+            def to_01_space( box ):
+                return box / np.array([
+                    model_input_resolution[0], 
+                    model_input_resolution[1], 
+                    model_input_resolution[0], 
+                    model_input_resolution[1] 
+                ])
+            
+            # gather bounding boxes to return
+            for klass, score, box in zip( classes[0], scores[0], boxes[0] ):
+                if klass[0] == klass_person:
+                    if score[0] >= score_threshold:
+                        box = to_01_space( box )
+                        detected_boxes.append( box )
+
+            return detected_boxes
+        
+        # render bounding boxes
+        def render_boxes( self, image, boxes ):
+            
+            for box in boxes:
+                
+                # scale 0.0-1.0 space to camera image resolution
+                h = image.shape[0]
+                w = image.shape[1]
+                box = (box * np.array([ w, h, w, h ])).astype(int)
+                
+                # render red rectancle
+                cv2.rectangle( 
+                    image, 
+                    tuple(box[0:2]),
+                    tuple(box[2:4]),
+                    color = box_color,
+                    thickness = box_thickness, 
+                    lineType = cv2.LINE_8,
+                )
+
+    app = Application()
+    app.run()
+    ```
+
+    In this version, we define 3 new methods `Application.format_model_input()`, `Application.detect_people()` and `Application.render_boxes()`. Also, in the main loop, we call these 3 new methods.
+
+    ``` python
+    # pass the video frame, and get formatted data for model input
+    image_formatted = self.format_model_input(media.image)
+    
+    # pass the formatted model input data, run people detection, and get detected bounding boxes
+    detected_boxes = self.detect_people( image_formatted )
+    
+    # render the detected bounding boxes on the video frame
+    self.render_boxes( media.image, detected_boxes )
+    ```
+
+    Within the 3 new methods, `detect_people()` is the key. It calls `node.call()` API with the model node name and input data to run inference process, and returns the inference result.
+
+    ``` python
+    model_node_name = "people_detection_model"
+
+    # call people detection model
+    people_detection_results = self.call( {"data":data}, model_node_name )
+    ```
+
+    The data shape of the API result is model dependent. `yolo3_mobilenet1.0_coco` model returns a tuple of 3 Numpy arrays, `classes`, `scores` and `boxes`, and they contain up to 100 detected people.
+
+    ``` python
+    classes, scores, boxes = people_detection_results
+
+    assert classes.shape == (1,100,1)
+    assert scores.shape == (1,100,1)
+    assert boxes.shape == (1,100,4)
+    ```
+
+    This method iterates the results and gather bounding boxes.
+
+1. Run the People detection application with "Test Utility".
+
+    We use the same panorama_test_utility_run.py script again, to run this application. Please note that we added some command line parameters in order to use model.
+
+    ```
+    video_filepath = "../../videos/TownCentreXVID.avi"
+
+    %run ../common/test_utility/panorama_test_utility_run.py \
+    \
+    --app-name {app_name} \
+    --code-package-name {code_package_name} \
+    --py-file {source_filename} \
+    \
+    --model-package-name {model_package_name} \
+    --model-node-name {people_detection_model_name} \
+    --model-file-basename ./models/yolo3_mobilenet1.0_coco_person \
+    \
+    --camera-node-name lab1_camera \
+    \
+    --video-file {video_filepath} \
+    --video-start 0 \
+    --video-stop 10 \
+    --video-step 1 \
+    \
+    --output-screenshots ./screenshots/%Y%m%d_%H%M%S
+    ```
+
+    Please confirm that you see following log in the output cell. The simulation should quickly finish because you specified `--video-stop 10`. This means simulation ends after 10 frames.
+
+    ```
+    Loading graph: ./lab1/graphs/lab1/graph.json
+        :
+        :
+    Frame : 0
+    media[0] : media.image.dtype=uint8, media.image.shape=(1080, 1920, 3)
+    2022-03-14 22:35:22,234 INFO Found libdlr.so in model artifact. Using dlr from ./models/people_detection_model/yolo3_mobilenet1.0_coco_person-LINUX_X86_64/libdlr.so
+    Frame : 1
+    media[0] : media.image.dtype=uint8, media.image.shape=(1080, 1920, 3)
+    Frame : 2
+    media[0] : media.image.dtype=uint8, media.image.shape=(1080, 1920, 3)
+        :
+        :
+    Frame : 10
+    media[0] : media.image.dtype=uint8, media.image.shape=(1080, 1920, 3)
+    Frame : 11
+    Reached end of video. Stopped simulation.
+    ```
+
+1. View the generated screenshot.
+
+    As same as last time, let's see generated screenshot.
+
+    ``` python
+    # View latest screenshot image
+
+    latest_screenshot_dirname = sorted( glob.glob( "./screenshots/*" ) )[-1]
+    screenshot_filename = sorted( glob.glob( f"{latest_screenshot_dirname}/*.png" ) )[-1]
+
+    print(screenshot_filename)
+    IPython.display.Image( filename = screenshot_filename )
+    ```
+
+    ![](images/people-detection-output.png)
+
+
+
+## Run the people detection application on real device
+
+> Note: This section is only for people who provisioned a Panorama appliance device with the AWS account. If you don't have, please skip to "Conclusion".
+
+In this Lab so far, we used Test Utility to run applications. While it is useful For who want to run applications without real hardware, and for who want to iterate development faster, it doesn't provide full compatibility and there are [known limitations](https://github.com/aws-samples/aws-panorama-samples/blob/main/docs/AboutTestUtility.md). Especially, real hardware is essential in order to understand the actual performance.
+
+In this section, we deploy the application onto real hardware, see the result on HDMI display and CloudWatch Logs, and delete the application.
+
+1. Confirm the Panorama applaince device is correctly provisioned with this AWS account.
+
+    ```
+    !aws panorama list-devices
+    ```
+
+1. Build the business logic container again with latest source code.
+
+1. Upload locally prepared packages onto Cloud.
+
+1. Deploy the application using the AWS Management Console
+
+1. Check HDMI output (if you have HDMI display with the Panorama appliance)
+
+1. Check application logs on CloudWatch Logs
+
+1. Delete the application.
+
 
 ## Conclusion
 
