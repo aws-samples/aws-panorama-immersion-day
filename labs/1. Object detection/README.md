@@ -444,7 +444,11 @@ In this section, we finally extend the application to "People detection" applica
             
             # call people detection model
             people_detection_results = self.call( {"data":data}, model_node_name )
-            
+
+            # None result means empty
+            if people_detection_results is None:
+                return detected_boxes
+        
             classes, scores, boxes = people_detection_results
 
             assert classes.shape == (1,100,1)
@@ -577,7 +581,7 @@ In this section, we finally extend the application to "People detection" applica
 
 1. View the generated screenshot.
 
-    As same as last time, let's see generated screenshot.
+    As same as last time, let's see generated screenshot. Please confirm that you see red bounding boxes on people in the image.
 
     ``` python
     # View latest screenshot image
@@ -601,27 +605,195 @@ In this Lab so far, we used Test Utility to run applications. While it is useful
 
 In this section, we deploy the application onto real hardware, see the result on HDMI display and CloudWatch Logs, and delete the application.
 
-1. Confirm the Panorama applaince device is correctly provisioned with this AWS account.
+1. Confirm the Panorama applaince device is correctly provisioned with this AWS account. 
 
     ```
     !aws panorama list-devices
     ```
 
+    Following is an example output.
+
+    ```
+    {
+        "Devices": [
+            {
+                "CreatedTime": 1646850480.295,
+                "DeviceId": "device-**************************",
+                "LastUpdatedTime": 1647033459.323,
+                "LeaseExpirationTime": 1647465427.0,
+                "Name": "MyDevice1",
+                "ProvisioningStatus": "SUCCEEDED"
+            }
+        ]
+    }
+    ```
+
+1. Manually edit the Docker file, and add some python libraries.
+
+    1. Open ./lab1/packages/{account_id}-lab1_code-1.0/Dockerfile with text editor.
+    1. Add "pip3 install" command at the end of the Dockerfile, to install `opencv-python` and `boto3`.
+
+        ```
+        FROM public.ecr.aws/panorama/panorama-application
+        COPY src /panorama
+        RUN pip3 install opencv-python boto3
+        ```
+
 1. Build the business logic container again with latest source code.
 
-1. Upload locally prepared packages onto Cloud.
+    Building container image is not needed when you use Test Utility, but for real hardware, you need to build the container image when you update the source code.
 
-1. Deploy the application using the AWS Management Console
+    ```
+    !cd {app_name} && panorama-cli build-container --container-asset-name code --package-path packages/{account_id}-{code_package_name}-{code_package_version}
+    ```
 
-1. Check HDMI output (if you have HDMI display with the Panorama appliance)
+1. Upload locally prepared packages onto Cloud with "panorama-cli package-application" command.
+
+    `panorama-cli package-application` command creates packages, register versions, and upload assets (container image, model data), based on the information we prepared locally. This process takes some time depending on the network bandwidth.
+
+    ```
+    !cd {app_name} && panorama-cli package-application
+    ```
+
+1. Deploy the application using the AWS Management Console.
+
+    > Note: You can deploy applications using API/CLI as well. For more details, please see the Lab2.
+
+    1. Open https://console.aws.amazon.com/panorama/home#deployed-applications, and click "Deploy aplication" button.
+        
+        ![](images/deploy-app-button.png)
+
+    1. "Copy your application manifest" dialog appears. Open "./lab1/graphs/lab1/graph.json" with Text editor, and copy the contents to the clipboard, and click "Ok" button.
+
+        ![](images/copy-manifest-dialog.png)
+
+    1. Paste the contents of graph.json, and click "Next" button.
+
+        ![](images/paste-manifest.png)
+
+    1. Input application name "Lab1", and click "Proceed to deploy" button.
+
+        ![](images/app-details.png)
+
+    1. "Panorama pricing" dialog appears. This is a confirmation how cost for AWS Panorama is charged. Click "Continue" button.
+
+        ![](images/pricing-dialog.png)
+
+    1. Click "Begin deployment" button.
+
+        ![](images/deploy-wizard-1.png)
+
+    1. IAM Role can be empty for this application. Click "Next" button.
+
+        ![](images/deploy-wizard-2.png)
+
+    1. Click "Select device" button.
+
+        ![](images/deploy-wizard-3-1.png)
+
+    1. Choose your device, and click "Select" button.
+
+        ![](images/deploy-wizard-3-2.png)
+
+    1. Confirm the selected device, and click "Next" button.
+
+        ![](images/deploy-wizard-3-3.png)
+
+    1. Confirm the selected device, and click "Next" button.
+
+        ![](images/deploy-wizard-3-3.png)
+
+    1. Click "View input(s)" button.
+
+        ![](images/deploy-wizard-4-1.png)
+
+    1. Click "Select data sources" button.
+
+        ![](images/deploy-wizard-4-2.png)
+
+    1. Select the data source, and click "Save" button.
+
+        ![](images/deploy-wizard-4-3.png)
+
+    1. Confirm the selected data source, and click "Save" button.
+
+        ![](images/deploy-wizard-4-4.png)
+
+    1. Click "Next" button.
+
+        ![](images/deploy-wizard-4-5.png)
+
+    1. Click "Next" button.
+
+        ![](images/deploy-wizard-5.png)
+
+    1. Click "Deploy" button.
+
+        ![](images/deploy-wizard-6.png)
+
+    1. Deployment process starts. Click "Done" button.
+
+        ![](images/deploy-wizard-6.png)
+
+    1. You can monitor the deployment status on the application list screen.
+
+        ![](images/wait-deployment.png)
+
+    1. Wait until the status changes to "Running".
+
+        ![](images/finished-deployment.png)
+
+1. Check HDMI output (HDMI display is available)
+
+    1. Connect your HDMI display with the Panorama appliance device.
+    1. Confirm that camera image and bounding boxes are visible on the display.
 
 1. Check application logs on CloudWatch Logs
 
+    1. Open https://console.aws.amazon.com/panorama/home#deployed-applications, and click the deployed application.
+
+        ![](images/cloudwatch-logs-1.png)
+
+    1. Copy the application instance ID to the clipboard.
+
+        ![](images/cloudwatch-logs-2.png)
+
+    1. Open https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups, and search for a log group which contains the application instance ID. Click it.
+
+        ![](images/cloudwatch-logs-3.png)
+    
+    1. Find a log stream "console_output", click it.
+
+        ![](images/cloudwatch-logs-4.png)
+
+    1. Confirm logs from application are visible.
+
+        ![](images/cloudwatch-logs-5.png)
+
 1. Delete the application.
 
+    Once you confirmed that the application is running as expected, let's delete the application before moving to next Labs.
+
+    1. Open https://console.aws.amazon.com/panorama/home#deployed-applications, and select the application.
+
+        ![](images/delete-app-1.png)
+
+    1. From the "Actions" drop-down menu, choose "Delete from device".
+
+        ![](images/delete-app-2.png)
+
+    1. Input the application name "Lab1", and click "Delete".
+
+        ![](images/delete-app-3.png)
+
+    1. Application status changes to "Deleting".
+
+        ![](images/delete-app-4.png)
+
+    1. Wait until the application disappears from the list.
+
+        ![](images/delete-app-5.png)
 
 ## Conclusion
 
-(drafting)
-
-
+By completing this Lab, you learned how to build basic AWS Panorama application step-by-step.
