@@ -8,3 +8,4 @@ models/
 *.log
 /labs/1. Object detection/lab1/
 screenshots/
+internal/
