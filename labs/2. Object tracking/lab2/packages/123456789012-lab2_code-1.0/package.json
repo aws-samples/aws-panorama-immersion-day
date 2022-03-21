@@ -1,0 +1,39 @@
+{
+    "nodePackage": {
+        "envelopeVersion": "2021-01-01",
+        "name": "lab1_code",
+        "version": "1.0",
+        "description": "Default description for package lab1_code",
+        "assets": [
+            {
+                "name": "code",
+                "implementations": [
+                    {
+                        "type": "container",
+                        "assetUri": "f7aaf4075e5c9a8ecaba095b5b76204e9c676f65d98b000e659451e1346da18a.tar.gz",
+                        "descriptorUri": "5391c510c26ab168dd182ca9db359a4c6175221355c169d0fbb950a27524ceee.json"
+                    }
+                ]
+            }
+        ],
+        "interfaces": [
+            {
+                "name": "code_interface",
+                "category": "business_logic",
+                "asset": "code",
+                "inputs": [
+                    {
+                        "name": "video_in",
+                        "type": "media"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "name": "video_out",
+                        "type": "media"
+                    }
+                ]
+            }
+        ]
+    }
+}
