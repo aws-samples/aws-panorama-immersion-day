@@ -5,16 +5,6 @@
         "version": "1.0",
         "description": "Default description for package lab2_model",
         "assets": [
-            {
-                "name": "people_detection_model",
-                "implementations": [
-                    {
-                        "type": "model",
-                        "assetUri": "056f37a520f9452577ef13a24fd4dcfba7f46c1e8c7a6f6685dd10f8f85ee669.tar.gz",
-                        "descriptorUri": "9befd292476bf99b37e7509e3da5def48558792f6cf6aac7ea8c5951c4362a12.json"
-                    }
-                ]
-            }
         ],
         "interfaces": [
             {

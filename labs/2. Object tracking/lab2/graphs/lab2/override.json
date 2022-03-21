@@ -1,0 +1,30 @@
+{
+    "nodeGraphOverrides": {
+        "envelopeVersion": "2021-01-01",
+        "packages": [
+            {
+                "name": "123456789012::MyCamera1",
+                "version": "1.0"
+            }
+        ],
+        "nodes": [
+            {
+                "name": "MyCamera1_node",
+                "interface": "123456789012::MyCamera1.MyCamera1",
+                "overridable": true,
+                "overrideMandatory" : false,
+                "launch" : "onAppStart"
+            }
+        ],
+        "nodeOverrides": [
+            {
+                "replace": "lab2_camera",
+                "with": [
+                    {
+                        "name": "MyCamera1_node"
+                    }
+                ]
+            }
+        ]
+    }
+}
