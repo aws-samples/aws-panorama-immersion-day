@@ -7,5 +7,6 @@ models/
 /videos/
 *.log
 /labs/1. Object detection/lab1/
+/labs/2. Object tracking/lab2/assets/
 screenshots/
 internal/
