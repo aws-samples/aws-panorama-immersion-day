@@ -1,16 +1,16 @@
 {
     "nodePackage": {
         "envelopeVersion": "2021-01-01",
-        "name": "lab1_model",
+        "name": "lab2_model",
         "version": "1.0",
-        "description": "Default description for package lab1_model",
+        "description": "Default description for package lab2_model",
         "assets": [
             {
                 "name": "people_detection_model",
                 "implementations": [
                     {
                         "type": "model",
-                        "assetUri": "0ade89be033096d2e74a47838f5f051e6ed3c3a8491054852a188d7424ff498d.tar.gz",
+                        "assetUri": "056f37a520f9452577ef13a24fd4dcfba7f46c1e8c7a6f6685dd10f8f85ee669.tar.gz",
                         "descriptorUri": "9befd292476bf99b37e7509e3da5def48558792f6cf6aac7ea8c5951c4362a12.json"
                     }
                 ]
