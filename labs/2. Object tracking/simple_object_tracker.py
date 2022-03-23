@@ -1,6 +1,7 @@
 import math
 import uuid
 
+# A class which represents a tracked object
 class TrackedObject:
     
     def __init__( self, box, forget_timer ):
@@ -8,20 +9,24 @@ class TrackedObject:
         self.forget_timer = forget_timer
         self.mapped = False
         self.uuid = uuid.uuid4()
-        print( f"New object : {self.box}", flush=True )
 
+# A class to track multiple objects using moving bounding boxes
 class SimpleObjectTracker:
     
     def __init__( self, tick_count_before_forget = 30 ):
         self.objs = []
         self.tick_count_before_forget = tick_count_before_forget
     
+    # track objects for bounding boxes and return a list of TrackedObject corresponding to passed boxes
     def track( self, boxes ):
-        
-        self._begin_track()
         
         mapped_objects = []
         
+        # mark all objects unmapped
+        for o in self.objs:
+            o.mapped = False
+        
+        # for each bounding box, check all tracked objects and choose best fit one
         for b in boxes:
             
             found = None
@@ -40,34 +45,25 @@ class SimpleObjectTracker:
                     b[1] > o.box[3]):  # below
                     continue
 
+                # choose closest object being tracked, using distances of top-left, bottom-right corners
                 distance2 = ((b-o.box)**2).sum()
                 if distance2 < closest_distance2:
                     found = o
                     closest_distance2 = distance2
-                
-            if found is None:
-                
+            
+            # if it seems the object is not being tracked, create new one
+            if found is None:                
                 found = TrackedObject( b, self.tick_count_before_forget )
                 self.objs.append(found)
             
-            # reset the forget-timer
+            # update the tracked object
             found.mapped = True
+            found.box = b
             found.forget_timer = self.tick_count_before_forget
 
+            # add the found one in the result
             mapped_objects.append(found)
 
-        self._end_track()
-        
-        return mapped_objects
-            
-    def _begin_track(self):
-        
-        # mark unmapped in this frame
-        for o in self.objs:
-            o.mapped = False
-        
-    def _end_track(self):
-        
         # count down forget timer of objects
         for o in self.objs:
             o.forget_timer -= 1
@@ -75,5 +71,7 @@ class SimpleObjectTracker:
         # forget objects
         self.objs = list( filter( lambda o: o.forget_timer > 0, self.objs) )
         
-        print( f"Num tracked objects : {len(self.objs)}", flush=True )
+        assert len(mapped_objects) == len(boxes)
+        
+        return mapped_objects
         
