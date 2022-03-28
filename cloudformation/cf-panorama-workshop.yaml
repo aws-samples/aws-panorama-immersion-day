@@ -9,6 +9,14 @@ Parameters:
     Default: PanoramaWorkshop
     Description: Enter the name of the SageMaker notebook instance.
 
+  UseGpu:
+    Type: String
+    Default: "True"
+    Description: Set 'True' to use a GPU instance, or 'False' for CPU only
+    AllowedValues:
+      - "True"
+      - "False"
+
   VolumeSize:
     Type: Number
     Default: 32
@@ -16,6 +24,12 @@ Parameters:
     MaxValue: 16384
     ConstraintDescription: Must be an integer between 5 (GB) and 16384 (16 TB).
     Description: Enter the size of the EBS volume in GB.
+
+Conditions:
+  GpuCondition:
+    Fn::Equals:
+      - "True"
+      - Ref: UseGpu
 
 Resources:
   # SageMaker Execution Role
@@ -35,33 +49,65 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         - "arn:aws:iam::aws:policy/IAMFullAccess"
-      Policies: 
-        - 
+      Policies:
+        -
           PolicyName: "PanoramaWorkshopNotebookPolicy"
-          PolicyDocument: 
+          PolicyDocument:
             Version: "2012-10-17"
-            Statement: 
-              - 
+            Statement:
+              -
                 Effect: "Allow"
                 Action: "panorama:*"
                 Resource: "*"
+
+# SageMaker notebook lifecycle
+  PanoramaWorkshopNotebookLifecycle:
+    Type: AWS::SageMaker::NotebookInstanceLifecycleConfig
+    Properties:
+      NotebookInstanceLifecycleConfigName: PanoramaWorkshopNotebookLifecycle
+      OnStart:
+        - Content:
+            Fn::Base64:
+              Fn::Join:
+                - "\n"
+                - - "#!/bin/bash"
+                  - "set -e"
+                  - "cat > setup_sm.sh <<'EOF'"
+                  - "#!/bin/bash"
+                  - "set -e"
+                  - "sudo -u ec2-user -i <<'EOF'"
+                  - "git clone https://github.com/aws-samples/aws-panorama-immersion-day.git $HOME/SageMaker/aws-panorama-immersion-day"
+                  - "cd $HOME/SageMaker/aws-panorama-immersion-day"
+                  - "source $HOME/anaconda3/bin/activate python3"
+                  - "pip install --upgrade --quiet panoramacli mxnet gluoncv"
+                  - Fn::If:
+                    - GpuCondition
+                    - "pip install --upgrade --quiet https://neo-ai-dlr-release.s3-us-west-2.amazonaws.com/v1.10.0/gpu/dlr-1.10.0-py3-none-any.whl"
+                    - "./scripts/install-dlr.sh"
+                  - "source $HOME/anaconda3/bin/deactivate"
+                  - "./scripts/install-docker.sh &"
+                  - "./scripts/install-glibc-sm.sh &"
+                  - "./scripts/create-opt-aws-panorama.sh &"
+                  - "./scripts/install-videos.sh &"
+                  - "EOF"
+                  - "echo 'EOF' >> setup_sm.sh"
+                  - "chmod +x setup_sm.sh"
+                  - "nohup ./setup_sm.sh &"
 
   # SageMaker notebook
   PanoramaWorkshopNotebookInstance:
     Type: "AWS::SageMaker::NotebookInstance"
     Properties:
-
-      InstanceType: "ml.p3.2xlarge"
-      #InstanceType: "ml.t2.medium" # for testing with cheaper instance type without GPU
-      
+      InstanceType:
+        Fn::If:
+          - GpuCondition
+          - ml.p3.2xlarge
+          - ml.t2.medium
       PlatformIdentifier : "notebook-al2-v1"
-
       NotebookInstanceName: !Ref NotebookName
+      LifecycleConfigName: PanoramaWorkshopNotebookLifecycle
       RoleArn: !GetAtt PanoramaWorkshopNotebookIamRole.Arn
       VolumeSizeInGB: !Ref VolumeSize
-
-      # This repository is still private. Uncomment following line once it become public.
-      # DefaultCodeRepository: https://github.com/aws-samples/aws-panorama-immersion-day.git
 
   # S3 bucket for Test Utility's model compilation
   PanoramaWorkshopBucket:
@@ -74,4 +120,3 @@ Resources:
           - !Ref AWS::AccountId
       PublicAccessBlockConfiguration:
         RestrictPublicBuckets : TRUE
-
