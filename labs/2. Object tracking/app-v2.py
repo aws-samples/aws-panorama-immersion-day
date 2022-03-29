@@ -6,7 +6,6 @@ import panoramasdk
 import simple_object_tracker
 
 model_input_resolution = (600,480)        
-#box_color = (0,0,255)
 box_thickness = 1
 
 # application class
