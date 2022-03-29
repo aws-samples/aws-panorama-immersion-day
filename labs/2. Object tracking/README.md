@@ -4,7 +4,7 @@
 
 ## Overview
 
-This Lab will walk you through step-by-step instructions on how to build AWS Panorama application, starting with importing existing People detection application, and extending it to People tracking. By completing this Lab, you will learn 1) how to import existing application to start quickly, 2) how to extend the object detection application to object tracking application by customizing application code, 3) how to run the application on notebooks or your local PC environment with Test Utility, and 4) how to deploy applications to real Panorama appliance devices programatically.
+This Lab will walk you through step-by-step instructions on how to build AWS Panorama application, starting with importing existing People detection application, and extending it to People tracking application. By completing this Lab, you will learn 1) how to import existing application to start quickly, 2) how to extend the object detection application to object tracking application by customizing the application code, 3) how to run the application on notebooks or your local PC environment with Test Utility, and 4) how to deploy applications to real Panorama appliance devices programatically.
 
 The previous Lab-1 covers how to create an Object detection application from scratch, in more step-by-step manner. While completing Lab-1 is not a strong requirement before this Lab, it is recommended to finish Lab-1 first to understand the basics.
 
@@ -322,8 +322,7 @@ In this section, we will extend the People detection application to People track
 
     import simple_object_tracker
 
-    model_input_resolution = (600,480)        
-    #box_color = (0,0,255)
+    model_input_resolution = (600,480)
     box_thickness = 1
 
     # application class
@@ -571,4 +570,215 @@ In this section, we will extend the People detection application to People track
 
 > Note: This section is only for people who provisioned a Panorama appliance device with the AWS account. If you don't have, please skip to "Conclusion".
 
-(drafting)
+In this Lab so far, we used Test Utility to run applications. While it is useful For who want to run applications without real hardware, and for who want to iterate development faster, it doesn't provide full compatibility and there are [known limitations](https://github.com/aws-samples/aws-panorama-samples/blob/main/docs/AboutTestUtility.md). Especially, real hardware is essential in order to understand the actual performance.
+
+In this section, we deploy the application onto real hardware, see the result on HDMI display and CloudWatch Logs, and delete the application. In this Lab, we deploy the application **programmatically** using `boto3`'s `panorama` client. If you want to understand how to deploy via browser UI, please refer to the previous Lab - Object detection.
+
+1. Create a boto3's panorama client. This is the interface to hit Panorama service APIs from Python (the notebook environment in this case).
+
+    ``` python
+    panorama_client = boto3.client("panorama")
+    ```
+
+1. Using the created panorama client, call `list_devices()` API, and check if there is a successfully provisioned device in the AWS account. The device ID is stored in the `device_id` variable.
+
+    ``` python
+    response = panorama_client.list_devices()
+    for device in response["Devices"]:
+        if device["ProvisioningStatus"]=="SUCCEEDED":
+            break
+    else:
+        assert False, "Provisioned device not found."
+
+    device_id = device["DeviceId"]
+
+    print( "%s : %s" % (device["Name"], device["DeviceId"]) )
+    ```
+
+1. Build the business logic container.
+
+    Building container image is not needed when you use Test Utility, but for real hardware, you need to build the container image when you update the source code.
+
+    ``` python
+    !cd {app_name} && panorama-cli build-container --container-asset-name code --package-path packages/{account_id}-{code_package_name}-{code_package_version}
+    ```
+
+1. Upload locally prepared packages onto Cloud with "panorama-cli package-application" command.
+
+    `panorama-cli package-application` command creates packages, register versions, and upload assets (container image, model data), based on the information we prepared locally. This process takes some time depending on the network bandwidth.
+
+    ``` python
+    !cd {app_name} && panorama-cli package-application
+    ```
+
+1. Look up data source name on the Management Console UI.
+
+    1. Open https://console.aws.amazon.com/panorama/home#data-sources, and confirm there is a data source you want to use in this Lab. click it.
+
+        > FIXME : add screenshot
+
+    1. Copy the name of the data source into your clipboard.
+
+        > FIXME : add screenshot
+
+1. Define actual data source in the override manifest file.
+
+    1. Understand why override manifest file is needed.
+
+        Before editting override manifest file, let's check the main manifest file `graph.json`, and understand why override manifest file is needed here.
+
+        The manifest file and override manifest file are located under `./lab2/graphs/lab2`. If you open the graph.json, you should see following two elements in it.
+
+        ``` json
+        "packages": [
+                :
+            {
+                "name": "panorama::abstract_rtsp_media_source",
+                "version": "1.0"
+            },
+                :
+        ],
+        ```
+
+        ``` json
+        "nodes": [
+                :
+            {
+                "name": "lab2_camera",
+                "interface": "panorama::abstract_rtsp_media_source.rtsp_v1_interface",
+                "overridable": true,
+                "launch": "onAppStart",
+                "decorator": {
+                    "title": "Camera lab2_camera",
+                    "description": "Default description for camera lab2_camera"
+                }
+            },
+                :
+        ]
+        ```
+
+        The main manifest file contains a Camera node `lab2_camera`. But as it uses `panorama::abstract_rtsp_media_source.rtsp_v1_interface` interface, it is not associated with any actual data sources. You need to replace this abstract data source node with actual data sources by providing override manifest file. This abstract structure is useful when you want to maintain a single graph.json and use different sets of cameras on different devices.
+
+    1. Manually edit the override manifest file.
+
+        In order to replace the abstract camera node, please edit the `override.json` referring to following example.
+
+        ``` json
+        {
+            "nodeGraphOverrides": {
+                "envelopeVersion": "2021-01-01",
+                "packages": [
+                    {
+                        "name": "{YourAwsAccountId}::{YourCameraName}",
+                        "version": "1.0"
+                    }
+                ],
+                "nodes": [
+                    {
+                        "name": "{YourCameraName}_node",
+                        "interface": "{YourAwsAccountId}::{YourCameraName}.{YourCameraName}",
+                        "overridable": true,
+                        "overrideMandatory" : false,
+                        "launch" : "onAppStart"
+                    }
+                ],
+                "nodeOverrides": [
+                    {
+                        "replace": "lab2_camera",
+                        "with": [
+                            {
+                                "name": "{YourCameraName}_node"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        ```
+
+        This example contains placeholders `{YourAwsAccountId}` and `{YourCameraName}` in multiple places. Please carefully replace all the placeholders with AWS account ID you are using for this Lab, and the data source name you just found on the Management Console UI. 
+        
+        > Note: Please replace including `{` and `}` characters. For example, if the account id is 123456789012, and if your data source name is MyCamera1, the replaced package name should look like "123456789012::MyCamera1".
+
+        > Note: In this Lab, we use just one data source, but it is possible to replace the abstract camera node with **multiple data sources**.
+
+        And save the file.
+
+1. Make sure your device is Online by running following cell.
+
+    ``` python
+    response = panorama_client.describe_device( DeviceId = device_id )
+    eth0_status = response["CurrentNetworkingStatus"]["Ethernet0Status"]["ConnectionStatus"]
+    eth1_status = response["CurrentNetworkingStatus"]["Ethernet1Status"]["ConnectionStatus"]
+
+    assert eth0_status=="CONNECTED" or eth1_status=="CONNECTED"    
+    ```
+
+1. Deploy an application instance by calling `create_application_instance()`
+
+    ``` python
+    def get_escaped_payload_from_json(filename):
+        with open(filename) as fd:
+            return json.dumps(json.loads(fd.read()))
+
+    manifest_payload = get_escaped_payload_from_json( f"./{app_name}/graphs/{app_name}/graph.json" )
+    override_payload = get_escaped_payload_from_json( f"./{app_name}/graphs/{app_name}/override.json" )
+
+    response = panorama_client.create_application_instance(
+        Name = app_name,
+        DefaultRuntimeContextDevice = device_id,
+        ManifestPayload = {"PayloadData":manifest_payload},
+        ManifestOverridesPayload = {"PayloadData":override_payload},
+    )
+
+    application_instance_id = response["ApplicationInstanceId"]
+
+    response
+    ```
+
+1. Wait until the deployment completes by calling `describe_application_instance()`
+
+    Deployment takes time. Let's run following cell to monitor the current deployment status by calling `describe_application_instance()`, and wait until the status changes to `DEPLOYMENT_SUCCEEDED`.
+
+    ``` python
+    def wait_deployment( application_instance_id ):
+        
+        progress_dots = panorama_test_utility.ProgressDots()    
+        while True:
+            app = panorama_client.describe_application_instance( ApplicationInstanceId = application_instance_id )
+            progress_dots.update_status( "%s (%s)" % (app["Status"], app["StatusDescription"]) )
+            if app["Status"] not in ( "DEPLOYMENT_PENDING", "DEPLOYMENT_REQUESTED", "DEPLOYMENT_IN_PROGRESS" ):
+                break
+            time.sleep(60)
+
+    wait_deployment( application_instance_id )
+    ```
+
+1. Check application logs on CloudWatch Logs
+
+    By running following cell, you get an URL which links to CloudWatch Logs.
+
+    ``` python
+    logs_url = panorama_test_utility.get_logs_url( region, device_id, application_instance_id )
+    print( "CloudWatch Logs URL :" )
+    print( logs_url )
+    ```
+
+    By opening the URL on your browser, you can see the log streams from the application instance. Please click `console_output` and confirm that log output from the application is visible.
+
+1. Check HDMI output (If HDMI display is available)
+
+    1. Connect your HDMI display with the Panorama appliance device.
+    1. Confirm that camera image and bounding boxes in different colors are visible on the display.
+
+1. Delete the application.
+
+    Once you confirmed that the application is running as expected, let's delete the application before moving to next Labs.
+
+    ``` python
+    panorama_test_utility.remove_application( device_id, application_instance_id )
+    ```
+
+## Conclusion
+
+By completing this Lab, you learned how to extend object detection application to object tracking application step-by-step.
