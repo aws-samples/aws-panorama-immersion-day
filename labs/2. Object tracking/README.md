@@ -206,7 +206,7 @@ In this Lab, we start with importing existing People detection application. You 
     IPython.display.Image( filename = screenshot_filename )    
     ```
 
-    > FIXME : add screenshot here
+    > FIXME : replace with different video / screenshot which demonstrate the object tracking capability
     ![](images/people-detection-output.png)
 
 
@@ -562,7 +562,7 @@ In this section, we will extend the People detection application to People track
     IPython.display.Image( filename = screenshot_filename )
     ```
 
-    > FIXME : add screenshot here
+    > FIXME : replace with different video / screenshot which demonstrate the object tracking capability
     ![](images/people-tracking-output.png)
 
 
@@ -615,11 +615,11 @@ In this section, we deploy the application onto real hardware, see the result on
 
     1. Open https://console.aws.amazon.com/panorama/home#data-sources, and confirm there is a data source you want to use in this Lab. click it.
 
-        > FIXME : add screenshot
+        ![](images/find-camera-name-1.png)
 
     1. Copy the name of the data source into your clipboard.
 
-        > FIXME : add screenshot
+        ![](images/find-camera-name-2.png)
 
 1. Define actual data source in the override manifest file.
 
@@ -710,6 +710,9 @@ In this section, we deploy the application onto real hardware, see the result on
     response = panorama_client.describe_device( DeviceId = device_id )
     eth0_status = response["CurrentNetworkingStatus"]["Ethernet0Status"]["ConnectionStatus"]
     eth1_status = response["CurrentNetworkingStatus"]["Ethernet1Status"]["ConnectionStatus"]
+
+    print( "eth0 :", eth0_status)
+    print( "eth1 :", eth1_status)
 
     assert eth0_status=="CONNECTED" or eth1_status=="CONNECTED"    
     ```
