@@ -743,7 +743,7 @@ In this section, we deploy the application onto real hardware, see the result on
 
         ![](images/finished-deployment.png)
 
-1. Check HDMI output (HDMI display is available)
+1. Check HDMI output (If HDMI display is available)
 
     1. Connect your HDMI display with the Panorama appliance device.
     1. Confirm that camera image and bounding boxes are visible on the display.
