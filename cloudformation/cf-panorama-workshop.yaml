@@ -11,7 +11,7 @@ Parameters:
 
   UseGpu:
     Type: String
-    Default: "True"
+    Default: "False"
     Description: Set 'True' to use a GPU instance, or 'False' for CPU only
     AllowedValues:
       - "True"
