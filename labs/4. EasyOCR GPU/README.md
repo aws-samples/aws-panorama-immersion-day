@@ -73,7 +73,7 @@ This Lab uses SageMaker Notebook environment.
 
 
     ``` python
-    panorama_test_utility.download_artifacts_gpu_sample('tensorrt', account_id)
+    panorama_test_utility.download_artifacts_gpu_sample('pytorch', account_id)
     ```
 
 ## Preparation
@@ -94,7 +94,7 @@ This Lab uses SageMaker Notebook environment.
 4. In the terminal, type the following
 
     ```
-    cd aws-panorama-immersion-day/labs/TensorRT/dependencies/docker
+    cd aws-panorama-immersion-day/labs/4.EasyOCR/dependencies/docker
     ```
 
 
