@@ -792,3 +792,5 @@ In this section, we deploy the application onto real hardware, see the result on
 ## Conclusion
 
 By completing this Lab, you learned how to extend object detection application to object tracking application step-by-step.
+
+> **Note:** Before proceeding to the next lab, please select "Kernel" > "Shut Down Kernel" from the menu bar to shut down the Jupyter kernel for this notebook, and free up memory.
