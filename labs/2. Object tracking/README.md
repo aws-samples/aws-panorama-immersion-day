@@ -165,8 +165,8 @@ In this Lab, we start with importing existing People detection application. You 
     \
     --video-file {video_filepath} \
     --video-start 0 \
-    --video-stop 10 \
-    --video-step 1 \
+    --video-stop 100 \
+    --video-step 10 \
     \
     --output-screenshots ./screenshots/%Y%m%d_%H%M%S
     ```
@@ -174,7 +174,7 @@ In this Lab, we start with importing existing People detection application. You 
     Please confirm that you see following log in the output cell. The simulation should quickly finish because you specified `--video-stop 10`. This means simulation ends after 10 frames.
 
     ```
-    Loading graph: ./lab1/graphs/lab2/graph.json
+    Loading graph: ./lab2/graphs/lab2/graph.json
         :
         :
     Frame : 0
@@ -216,7 +216,7 @@ In this section, we will extend the People detection application to People track
 
 1. Create a new python source file `simple_object_tracker.py` and define `SimpleObjectTracker` class in it.
 
-    1. Using the file browser pane, browse to "lab1/lab2/packages/{account_id}-lab2_code-1.0/src/". You should see `app.py` already.
+    1. Using the file browser pane, browse to "./lab2/packages/{account_id}-lab2_code-1.0/src/". You should see `app.py` already.
 
     1. From the menu bar, select "File" > "New" > "Text File". A new empty text file "untitled.txt" is created.
 
@@ -548,22 +548,29 @@ In this section, we will extend the People detection application to People track
     --output-screenshots ./screenshots/%Y%m%d_%H%M%S
     ```
 
-1. View the generated screenshot.
+1. View the generated screenshots.
 
     As same as last time, let's see generated screenshot. Please confirm that you see bounding boxes in multiple colors. You can open different screenshot files in the same directory to confirm that the application used same color for same object across multple frames.
 
     ``` python
-    # View latest screenshot image
-
+    # View 1st and last frame image with Object Tracking
     latest_screenshot_dirname = sorted( glob.glob( "./screenshots/*" ) )[-1]
-    screenshot_filename = sorted( glob.glob( f"{latest_screenshot_dirname}/*.png" ) )[-1]
 
+    # This is the 1st frame 
+    screenshot_filename = sorted( glob.glob( f"{latest_screenshot_dirname}/*.png" ) )[0]
     print(screenshot_filename)
     IPython.display.Image( filename = screenshot_filename )
     ```
 
-    > FIXME : replace with different video / screenshot which demonstrate the object tracking capability
+    ``` python
+    # This is the 10th frame 
+    screenshot_filename = sorted( glob.glob( f"{latest_screenshot_dirname}/*.png" ) )[-1]
+    print(screenshot_filename)
+    IPython.display.Image( filename = screenshot_filename )
+    ```
+
     ![](images/people-tracking-output.png)
+    ![](images/people-tracking-output2.png)
 
 
 ## Run the people tracking application on real device
