@@ -82,7 +82,7 @@ In this Lab, as the first step, we create a simplest one-line application "Hello
 
 1. Manually create a one-line python source code.
 
-    1. Using the file browser pane, browse to "lab1/lab1/packages/{account_id}-lab1_code-1.0/src/". This directory is created by the previous step, but it is still empty.
+    1. Using the file browser pane, browse to "./lab1/packages/{account_id}-lab1_code-1.0/src/". This directory is created by the previous step, but it is still empty.
 
     1. From the menu bar, select "File" > "New" > "Text File". A new empty text file "untitled.txt" is created.
 
@@ -98,7 +98,7 @@ In this Lab, as the first step, we create a simplest one-line application "Hello
 
 1. Manually edit the code node descriptor file, and specify the entry point of the application code.
 
-    1. Using the file browser pane, browse to "lab1/lab1/packages/{account_id}-lab1_code-1.0/". Find "descriptor.json".
+    1. Using the file browser pane, browse to "./lab1/packages/{account_id}-lab1_code-1.0/". Find "descriptor.json".
 
     1. Right-click the file, and select "Open With" > "Editor", to open this file with text editor.
 
@@ -312,12 +312,12 @@ In this section, we finally extend the application to "People detection" applica
     model_package_version = "1.0"
     people_detection_model_name = "people_detection_model"
 
-    !cd {app_name} && panorama-cli create-package --type Model --name {model_package_name} --version {code_package_version}
+    !cd {app_name} && panorama-cli create-package --type Model --name {model_package_name} --version {model_package_version}
     ```
 
 1. Manually edit the model descriptor file, and specify the name of ML framework ("MXNET"), input data name ("data") and input data shape ( [1, 3, 480, 600] ).
 
-    1. Open "lab1/packages/{account_id}-lab1_model-1.0/descriptor.py" by text editor.
+    1. Open "lab1/packages/{account_id}-lab1_model-1.0/descriptor.json" by text editor.
     1. Edit the contents as below:
 
         ``` python
