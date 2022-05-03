@@ -1,0 +1,52 @@
+{
+    "nodePackage": {
+        "envelopeVersion": "2021-01-01",
+        "name": "lab3",
+        "version": "1.0",
+        "description": "Default description for package lab3",
+        "assets": [
+            {
+                "name": "lab3",
+                "implementations": [
+                    {
+                        "type": "container",
+                        "assetUri": "3c748b8349bc4f52d8eabea26ac940d4b7b2a2261cfb1b8d4108c9eecddad1a2.tar.gz",
+                        "descriptorUri": "566bde2a6527ce45ec3300a90a24b5022d780816099a94fcc9545ef14eccd9a9.json",
+                        "requirements": 
+                            [{
+                                "type" : "hardware_access",
+                                "inferenceAccelerators": [ 
+                                    {
+                                        "deviceType": "nvhost_gpu",
+                                        "sharedResourcePolicy": {
+                                            "policy" : "allow_all"
+                                        }
+                                    }
+                                ]
+                            }]
+                    }
+                ]
+            }
+
+        ],
+        "interfaces": [
+            {
+                "name": "lab3_interface",
+                "category": "business_logic",
+                "asset": "lab3",
+                "inputs": [
+                    {
+                        "name": "video_in",
+                        "type": "media"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "name": "video_out",
+                        "type": "media"
+                    }
+                ]
+            }
+        ]
+    }
+}

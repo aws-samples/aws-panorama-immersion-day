@@ -14,6 +14,7 @@ import panoramasdk
 
 panorama_client = boto3.client('panorama') # FIXME : pass from sample notebook
 
+
 # ---
 
 class Config:
@@ -126,7 +127,8 @@ def resolve_sm_role():
                     "Principal": {
                         "Service": [
                             "sagemaker.amazonaws.com",
-                            "s3.amazonaws.com"]},
+                            "s3.amazonaws.com",
+                            "cloudwatch.amazonaws.com"]},
                     "Action": "sts:AssumeRole"}]}
 
         rolename = 'AWSPanoramaSMRole' + \
@@ -144,6 +146,10 @@ def resolve_sm_role():
         iam_client.attach_role_policy(
             RoleName=rolename,
             PolicyArn="arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+        )
+        iam_client.attach_role_policy(
+            RoleName=rolename,
+            PolicyArn="arn:aws:iam::aws:policy/CloudWatchFullAccess"
         )
         return role['Role']['Arn']
 
@@ -209,6 +215,92 @@ def download_sample_model( model_name, dst_dirname ):
     _http_download( src_url, dst_path )
 
     print( "Downloaded to", dst_path )
+    
+    
+def download_artifacts_gpu_sample(sample, account_id):
+    if sample.upper() == 'ONNX':
+        print('Downloading Source Code')
+        os.system("wget -P ./onnx_37_app/packages/{}-onnx_37_app-1.0/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/ONNX_Sample/src.zip".format(str(account_id)))
+        os.system("unzip -o ./onnx_37_app/packages/{}-onnx_37_app-1.0/src.zip -d ./onnx_37_app/packages/{}-onnx_37_app-1.0".format(str(account_id), str(account_id)))
+        os.system("rm ./onnx_37_app/packages/{}-onnx_37_app-1.0/src.zip".format(str(account_id)))
+        
+        print('Downloading Dependencies')
+        os.system("wget -P . https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/ONNX_Sample/dependencies.zip")
+        os.system("unzip -o dependencies.zip -d . ")
+        os.system("rm dependencies.zip")
+        
+    elif sample.upper() == 'PYTORCH':
+        print('Downloading Source Code')
+        os.system("wget -P ./yolov5s_37_2_app/packages/{}-yolov5s_37_2_app-1.0/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/PT_Sample/src.zip".format(str(account_id)))
+        os.system("unzip -o ./yolov5s_37_2_app/packages/{}-yolov5s_37_2_app-1.0/src.zip -d ./yolov5s_37_2_app/packages/{}-yolov5s_37_2_app-1.0".format(str(account_id), str(account_id)))
+        os.system("rm ./yolov5s_37_2_app/packages/{}-yolov5s_37_2_app-1.0/src.zip".format(str(account_id)))
+        
+        print('Downloading Dependencies')
+        os.system("wget -P . https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/PT_Sample/dependencies.zip")
+        os.system("unzip -o dependencies.zip -d . ")
+        os.system("rm dependencies.zip")
+        
+    elif sample.upper() == 'TENSORFLOW':
+        print('Downloading Source Code')
+        os.system("wget -P ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TF_Sample/src.zip".format(str(account_id)))
+        os.system("unzip -o ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0/src.zip -d ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0".format(str(account_id), str(account_id)))
+        os.system("rm ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0/src.zip".format(str(account_id)))
+        
+        print('Downloading Model')
+        os.system("wget -P ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TF_Sample/saved_model_trt_fp16.zip".format(str(account_id)))
+        os.system("unzip -o ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0/saved_model_trt_fp16.zip -d ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0".format(str(account_id), str(account_id)))
+        os.system("rm ./tf2_4_trt_app/packages/{}-tf2_4_trt_app-1.0/saved_model_trt_fp16.zip".format(str(account_id)))
+        
+        print('Downloading Dependencies')
+        os.system("wget -P . https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TF_Sample/dependencies.zip")
+        os.system("unzip -o dependencies.zip -d . ")
+        os.system("rm dependencies.zip")
+
+    elif sample.upper() == 'TENSORRT':
+        print('Downloading Source Code')
+        os.system("wget -P ./trtpt_36_2_app/packages/{}-trtpt_36_2_app-1.0/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/src.zip".format(str(account_id)))
+        os.system("unzip -o ./trtpt_36_2_app/packages/{}-trtpt_36_2_app-1.0/src.zip -d ./trtpt_36_2_app/packages/{}-trtpt_36_2_app-1.0".format(str(account_id), str(account_id)))
+        os.system("rm ./trtpt_36_2_app/packages/{}-trtpt_36_2_app-1.0/src.zip".format(str(account_id)))
+        
+        print('Downloading Dependencies')
+        os.system("wget -P . https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/dependencies.zip")
+        os.system("unzip -o dependencies.zip -d . ")
+        os.system("rm dependencies.zip")
+        
+        
+    elif sample.upper() == 'LAB3':
+        print('Downloading Source Code')
+        cmd="wget -P ./lab3/packages/{}-lab3-1.0/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/src.zip".format(str(account_id))
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="unzip -o ./lab3/packages/{}-lab3-1.0/src.zip -d ./lab3/packages/{}-lab3-1.0".format(str(account_id), str(account_id))
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="rm ./lab3/packages/{}-lab3-1.0/src.zip".format(str(account_id))
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        
+        print('Downloading Dependencies')
+        cmd="wget -P . https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/dependencies.zip"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="unzip -o dependencies.zip -d ."
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="rm dependencies.zip"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        
+        print('Downloading Base Image (~5 min)')  
+        cmd="wget -P ./dependencies/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/lab3_base_image.tar".format(str(account_id))
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        
+        print('Loading Base Image (~10 min)')
+        cmd="sudo docker load < ./dependencies/lab3_base_image.tar"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="rm ./dependencies/lab3_base_image.tar".format(str(account_id))
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        
+        print('Downloading Artifacts')
+        cmd="wget -P ./lab3/assets/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/566bde2a6527ce45ec3300a90a24b5022d780816099a94fcc9545ef14eccd9a9.json"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="wget -P ./lab3/assets/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/3c748b8349bc4f52d8eabea26ac940d4b7b2a2261cfb1b8d4108c9eecddad1a2.tar.gz"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        
 
 
 def compile_model(
@@ -458,4 +550,3 @@ def get_logs_url( region_name, device_id, application_instance_id ):
     log_group = f"/aws/panorama/devices/{device_id}/applications/{application_instance_id}"
     encoded_log_group = log_group.replace( "/", "$252F" )
     return f"https://console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/{encoded_log_group}"
-
