@@ -1,0 +1,52 @@
+{
+    "nodePackage": {
+        "envelopeVersion": "2021-01-01",
+        "name": "lab4",
+        "version": "1.0",
+        "description": "Default description for package easyocr",
+        "assets": [
+            {
+                "name": "lab4",
+                "implementations": [
+                    {
+                        "type": "container",
+                        "assetUri": "00cd365a4e7f417638bf2182346c8fee3e4cfcaa779c0c78392963c2ed16c728.tar.gz",
+                        "descriptorUri": "bdabbfe61350567c6e83c0298d8900d96a8eb38b7a99adc99bb13c4256a9b937.json",
+                        "requirements": 
+                            [{
+                                    "type" : "hardware_access",
+                                    "inferenceAccelerators": [ 
+                                        {
+                                            "deviceType": "nvhost_gpu",
+                                            "sharedResourcePolicy": {
+                                                "policy" : "allow_all"
+                                            }
+                                        }
+                                    ]
+                            }]
+                        
+                    }
+                ]
+            }
+        ],
+        "interfaces": [
+            {
+                "name": "lab4_interface",
+                "category": "business_logic",
+                "asset": "lab4",
+                "inputs": [
+                    {
+                        "name": "video_in",
+                        "type": "media"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "name": "video_out",
+                        "type": "media"
+                    }
+                ]
+            }
+        ]
+    }
+}

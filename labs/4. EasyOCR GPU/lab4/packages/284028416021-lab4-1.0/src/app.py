@@ -10,7 +10,7 @@ class Application(panoramasdk.node):
     def __init__(self):
         """Initializes the application's attributes with parameters from the interface, and default values."""
         self.ocr_detector = easyocr.Reader(["en"], gpu=True)
-
+        self.frame_num = 0
         logger.info('Initialiation complete.')
             
 

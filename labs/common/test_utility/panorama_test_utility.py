@@ -301,6 +301,13 @@ def download_artifacts_gpu_sample(sample, account_id):
         cmd="wget -P ./lab3/assets/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/TRT_Sample/3c748b8349bc4f52d8eabea26ac940d4b7b2a2261cfb1b8d4108c9eecddad1a2.tar.gz"
         subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         
+    elif sample.upper() == 'LAB4':
+        print('Downloading Artifacts')
+        cmd="wget -P ./lab4/assets/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/EasyOCR/bdabbfe61350567c6e83c0298d8900d96a8eb38b7a99adc99bb13c4256a9b937.json"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        cmd="wget -P ./lab4/assets/ https://panorama-starter-kit.s3.amazonaws.com/public/v2/opengpusamples/EasyOCR/00cd365a4e7f417638bf2182346c8fee3e4cfcaa779c0c78392963c2ed16c728.tar.gz"
+        subprocess.check_call(cmd,stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+        
 
 
 def compile_model(

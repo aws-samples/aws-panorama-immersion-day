@@ -3,7 +3,7 @@
         "envelopeVersion": "2021-01-01",
         "packages": [
             {
-                "name": "028663699634::lab4",
+                "name": "284028416021::lab4",
                 "version": "1.0"
             },
             {
@@ -28,7 +28,7 @@
             },
             {
                 "name": "lab4_node",
-                "interface": "028663699634::lab4.lab4_interface",
+                "interface": "284028416021::lab4.lab4_interface",
                 "overridable": false,
                 "launch": "onAppStart"
             },

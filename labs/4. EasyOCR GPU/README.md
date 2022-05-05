@@ -23,12 +23,7 @@ This Lab uses SageMaker Notebook environment.
 
 ## Download Artifacts
 
-1. Open a terminal again and run aws configure. Enter your Access credentials here. Once you enter them and click enter, close the terminal
-
-      ![](images/Terminal_Open4.png)
-
-
-2. Open the included lab4.ipynb notebook. Hit **Shift-Enter**, and execute the first code cell **"Set Up"**. This cell imports necessarily Python modules for this Lab.
+1. Open the included lab4.ipynb notebook. Hit **Shift-Enter**, and execute the first code cell **"Set Up"**. This cell imports necessarily Python modules for this Lab.
     ``` python
         import sys
         import os
@@ -47,9 +42,11 @@ This Lab uses SageMaker Notebook environment.
         # instantiate boto3 clients
         s3_client = boto3.client('s3')
         panorama_client = boto3.client('panorama', region_name = 'us-west-2')  
+        
+        
     ```
 
-3. Create Notebook Parameters next (**Shift-Enter**)
+2. Create Notebook Parameters next (**Shift-Enter**)
 
     ``` python
         # application name
@@ -61,51 +58,22 @@ This Lab uses SageMaker Notebook environment.
 
         # AWS account ID
         account_id = boto3.client("sts").get_caller_identity()["Account"]
+        
+        
     ```
     
-4. Once we create the above parameters, we now replace the account id's / import our application. (**Shift-Enter**)
-
-    ``` python
-    !cd ./lab4 && panorama-cli-dev import-application
-    ```
     
-5. At this point we can start downloading the dependencies (Base Docker file) and the source code. Run this cell with **Shift-Enter**
+3. Once we create the above parameters, we now replace the account id's / import our application. (**Shift-Enter**)
 
+``` python
+!cd ./lab4 && panorama-cli import-application
+```
+    
+4. At this point we can start downloading the dependencies (Container Artifacts) and the source code. Run this cell with **Shift-Enter**
 
-    ``` python
-    panorama_test_utility.download_artifacts_gpu_sample('pytorch', account_id)
-    ```
-
-## Preparation
-
-1. The first step here is to build the base docker image. For that, open a terminal session by clicking on the blue + button on the left
-
-      ![](images/Terminal_Open.png)
-
-2. Once you click it, a screen with multiple options will open like below. Click **Terminal** option in the Other section
-
-      ![](images/Terminal_Open2.png)
-
-3. After clicking terminal, you should see a terminal open up like here. 
-
-      ![](images/Terminal_Open3.png)
-
-
-4. In the terminal, type the following
-
-    ```
-    cd aws-panorama-immersion-day/labs/4.EasyOCR/dependencies/docker
-    ```
-
-
-5. Once you get to the folder called dependencies, type the following 
-
-    ```sudo docker build -t  pt:37 .```
-
-> **Warning:** : This will take a bit of time and should take upwards of 30 mins.
-
-
-Once we are done with Step 5, we are ready to build the application
+``` python
+panorama_test_utility.download_artifacts_gpu_sample('lab4', account_id)
+```
 
 ## Create Camera
 
@@ -115,7 +83,7 @@ Once we are done with Step 5, we are ready to build the application
 > **Warning:** : You should already have an RTSP camera connected to the same subnet as the device
 
     ``` python
-    CAMERA_NAME = "test_rtsp_camera_lab4"
+    CAMERA_NAME = "lab4_cam"
 
     CAMERA_CREDS = '{"Username":"root","Password":"Aws2017!","StreamUrl": "rtsp://10.92.202.65/onvif-media/media.amp?profile=profile_1_h264&sessiontimeout=60&streamtype=unicast"}'
     ```
@@ -141,94 +109,7 @@ Once we are done with Step 5, we are ready to build the application
     !aws panorama describe-node-from-template-job --job-id {res_json['JobId']}
     ```
 
-## Build Application Container
-
-1. Run cell that says the following with **Shift-Enter**
-
-    ``` python
-    container_asset_name = 'lab4'
-    ```
-    
-    
-1. Run the next cell that is building the container artifacts with **Shift-Enter**
-
-    ``` python
-    %%capture captured_output
-
-    # Building container image.This process takes time (5min ~ 10min)
-    # FIXME : without %%capture, browser tab crashes because of too much output from the command.
-
-    !cd ./lab4 && panorama-cli build \
-        --container-asset-name {container_asset_name} \
-        --package-path packages/{account_id}-{code_package_name}-1.0
-
-    ```
-    
-1. Run the next cell simulataneously, this essentially gives you the status once the above cell runs. Run with **Shift-Enter**
-
-    ``` python
-    stdout_lines = captured_output.stdout.splitlines()
-    stderr_lines = captured_output.stderr.splitlines()
-    print("     :")
-    print("     :")
-    for line in stdout_lines[-30:] + stderr_lines[-30:]:
-        print(line)
-    ```
-    
-1. Once the above cells finish building the container artifacts, go to 
-
-    ``` python
-    ./lab4/packages/<accountnum>-lab4-1.0/package.json
-    ```
-
-1. Right Click on package.json and open with Editor
-    ![](images/RightClick.png)
-    
-1. Once it opens with the editor, add the following to the file
-
-   ``` python
-        "requirements": 
-                    [{
-                            "type" : "hardware_access",
-                            "inferenceAccelerators": [ 
-                                {
-                                    "deviceType": "nvhost_gpu",
-                                    "sharedResourcePolicy": {
-                                        "policy" : "allow_all"
-                                    }
-                                }
-                            ]
-                    }]
-    ```
-    
-    The assets section should look something like this after
-
-   ``` python
-            "assets": [
-            {
-                "name": "lab4",
-                "implementations": [
-                    {
-                        "type": "container",
-                        "assetUri": "9a49a98784f4571adacc417f00942dac7ef2e34686eef21dca9fcb7f4b7ffd70.tar.gz",
-                        "descriptorUri": "4bab130ec48eea84e072d9fe813b947e9d9610b2924099036b0165026a91d306.json",
-                        "requirements": 
-                        [{
-                            "type" : "hardware_access",
-                            "inferenceAccelerators": [ 
-                                {
-                                    "deviceType": "nvhost_gpu",
-                                    "sharedResourcePolicy": {
-                                        "policy" : "allow_all"
-                                    }
-                                }
-                            ]
-                        }]
-                    }
-                ]
-            }
-        ],    
-    ```
+## Build And Upload Application Container
     
 1. At this point, we are ready to upload the application. Execute this cell with **Shift+Enter**
 
@@ -366,6 +247,8 @@ Once we are done with Step 5, we are ready to build the application
 1. Delete the application.
 
     Once you confirmed that the application is running as expected, let's delete the application before moving to next Labs.
+    
+    We will be using the example images from LAB 1 but the idea is the same. Please replace Lab 1 with Lab 4 where necessary. 
 
     1. Open https://console.aws.amazon.com/panorama/home#deployed-applications, and select the application.
 
