@@ -12,13 +12,37 @@ This lab is an advanced example which will walk a user through step-by-step inst
 
 **panorama-cli** is a command-line utility to help Panorama application developers construct necessary components such as code node, model node, camera node, node packages, container image for code, and node graph structure. It also helps uploading packages to AWS Cloud before deploying application to the device. For more details about panorama-cli, please refer to [this page](https://github.com/aws/aws-panorama-cli).
 
+
+## How exactly does Open GPU on Panorama work?
+
+In Lab1 and Lab2, you have used a model that was compiled thru the Sagemaker Neo compiler on the device. The Neo compiled model is automatically run on the GPU. But you did not run a non Neo compiled model. 
+
+In lab4 and Lab4, you will be using frameworks like PyTorch and TensorRT directly on the Panorama device on a custom built container, without compiling these thru Neo 
+
+Please read Lab3 README.md from here for a more detailed understanding of this : "aws-panorama-immersion-day" >  "labs" > "3. Object Detection GPU" > "README.md"
+    
+In this lab, we directly download the container artifacts and deploy to the device to save time. 
+
+* **Build and upload Container artifacts using panorama-cli build (Dont have to do this for this lab)**
+    * Once we have all the steps above done, you are now ready to build the container artifacts
+    * Inside the lab4/packages/<account-id>-lab4-1.0 you will see another Dockerfile
+    * Inside this dockerfile, we have imported the base image we build in the first step and also mounted the src folder to /panorama folder on the device 
+    * We build this container artifacts using panorama-cli build
+    * This will create two files
+        * One .sqfs file
+        * One .json file
+    * These two files will be uploaded to the Panorama cloud and downloaded to the device
+    * **These files have already been created for you in the interest of time**
+
+
+
 ## How to open and run notebook
 
 This Lab uses SageMaker Notebook environment. 
 1. Visit [SageMaker Notebooks instances page](https://console.aws.amazon.com/sagemaker/home#/notebook-instances) and find "PanoramaWorkshop". Click "Open JupyterLab". 
-1. In the file browser pane in left hand side, locate "aws-panorama-immersion-day" >  "labs" > "3. lab4.ipynb", and double click it. Notebook opens.
+1. In the file browser pane in left hand side, locate "aws-panorama-immersion-day" >  "labs" > "4. EasyOCR GPU" > "lab4.ipynb", and double click it. Notebook opens.
+1. Choose conda_python3 as the Notebook kernel
 1. Select the first cell, and hit Shift-Enter key to execute a single selected cell and move to next cell.
-
 
 
 ## Download Artifacts
@@ -41,7 +65,7 @@ This Lab uses SageMaker Notebook environment.
 
         # instantiate boto3 clients
         s3_client = boto3.client('s3')
-        panorama_client = boto3.client('panorama', region_name = 'us-west-2')  
+        panorama_client = boto3.client('panorama')  
         
         
     ```
@@ -77,44 +101,30 @@ panorama_test_utility.download_artifacts_gpu_sample('lab4', account_id)
 
 ## Create Camera
 
-1. Once you are done building the base docker file, come back to the ipython notebook.Go to section, **Update Camera Streams**
-
-2. In this step we are creating a new camera for you to use. 
-> **Warning:** : You should already have an RTSP camera connected to the same subnet as the device
-
-    ``` python
-    CAMERA_NAME = "lab4_cam"
-
-    CAMERA_CREDS = '{"Username":"root","Password":"Aws2017!","StreamUrl": "rtsp://10.92.202.65/onvif-media/media.amp?profile=profile_1_h264&sessiontimeout=60&streamtype=unicast"}'
-    ```
-3. In the above step, update your username, password and the stream url of the RTSP stream you have set up
-
-4. Run the next cell as is. This cell programatically creates your camera on the cloud
-
-    ``` python
-        res = !aws panorama create-node-from-template-job --template-type RTSP_CAMERA_STREAM \
-            --output-package-name {CAMERA_NAME} \
-            --output-package-version '1.0' \
-            --node-name {CAMERA_NAME} \
-            --template-parameters '{CAMERA_CREDS}'
-
-        res = ''.join(res)
-        print(res)
-        res_json = json.loads(res)
-    ```
-
-5. Check the Status of the Camera creation in the next cell
-
-    ``` python
-    !aws panorama describe-node-from-template-job --job-id {res_json['JobId']}
-    ```
+1. This step was already done in Lab1, so you wont need to do this again. You can use the camera that you created in Lab 1 for this
 
 ## Build And Upload Application Container
     
-1. At this point, we are ready to upload the application. Execute this cell with **Shift+Enter**
+1. Run cell that says the following with **Shift-Enter**
+
+    ``` python
+    container_asset_name = 'lab4'
+    ```
+
+2. Generally at this point, we build the application container artifacts using the panorama-cli build. **(THIS HAS ALREADY BEEN DONE FOR YOU FOR THIS LAB)**
+
+This step takes around 10 to 20 minutes
+
+``` python
+!cd ./lab4 && panorama-cli build \
+    --container-asset-name {container_asset_name} \
+    --package-path packages/{account_id}-{code_package_name}-1.0
+```
+    
+3. At this point, we are ready to upload the application. Execute this cell with **Shift+Enter**
 
    ``` python
-        !cd ./lab4 && pwd && panorama-cli package-application
+        !cd ./lab4x && pwd && panorama-cli package-application
 
     ```
     
@@ -272,4 +282,6 @@ panorama_test_utility.download_artifacts_gpu_sample('lab4', account_id)
 
 ## Conclusion
 
-By completing this Lab, you learned how to build basic AWS Panorama application step-by-step.
+By completing this Lab, you learned how to deploy a prebuilt OCR model to the Panorama device. This is an advanced example that you can use to detect and recognize text in an image.
+
+> **Note:** Before proceeding to the next lab, please select "Kernel" > "Shut Down Kernel" from the menu bar to shut down the Jupyter kernel for this notebook, and free up memory.
