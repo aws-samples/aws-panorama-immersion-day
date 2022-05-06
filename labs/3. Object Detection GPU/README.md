@@ -40,7 +40,51 @@ In Lab3 and Lab4, you will be using frameworks like PyTorch and TensorRT directl
     * You can see that after running **download_artifacts_gpu_sample**, an src folder has been created in 
         * lab3/packages/<account-id>-lab3-1.0/src
     * Inside this folder you will see the application code and the model
+    * Once you build the container artifacts, we will need to add the following snippet to the package.json file in lab3/packages/<account-id>-lab3-1.0/package.json into the assets section
 
+        ``` json
+         "requirements": [
+                            {
+                                "type": "hardware_access",
+                                "inferenceAccelerators": [
+                                    {
+                                        "deviceType": "nvhost_gpu",
+                                        "sharedResourcePolicy": {
+                                            "policy": "allow_all"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+        ```
+    
+    The assets section should look something like this after you add it in 
+    
+    ``` json
+                {
+                "name": "lab3",
+                "implementations": [
+                    {
+                        "type": "container",
+                        "assetUri": "3c748b8349bc4f52d8eabea26ac940d4b7b2a2261cfb1b8d4108c9eecddad1a2.tar.gz",
+                        "descriptorUri": "566bde2a6527ce45ec3300a90a24b5022d780816099a94fcc9545ef14eccd9a9.json",
+                        "requirements": 
+                            [{
+                                "type" : "hardware_access",
+                                "inferenceAccelerators": [ 
+                                    {
+                                        "deviceType": "nvhost_gpu",
+                                        "sharedResourcePolicy": {
+                                            "policy" : "allow_all"
+                                        }
+                                    }
+                                ]
+                            }]
+                    }
+                ]
+            }
+    
+    ```
 
 
     
