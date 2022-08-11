@@ -109,15 +109,3 @@ Resources:
       LifecycleConfigName: PanoramaWorkshopNotebookLifecycle
       RoleArn: !GetAtt PanoramaWorkshopNotebookIamRole.Arn
       VolumeSizeInGB: !Ref VolumeSize
-
-  # S3 bucket for Test Utility's model compilation
-  PanoramaWorkshopBucket:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      BucketName: # panorama-workshop-{aws account id}
-        !Join
-        - ''
-        - - 'panorama-workshop-'
-          - !Ref AWS::AccountId
-      PublicAccessBlockConfiguration:
-        RestrictPublicBuckets : TRUE
