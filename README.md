@@ -18,10 +18,12 @@
 ## How to clean up
 
 1. Stop the "PanoramaWorkshop" instance from [SageMaker Notebooks instances page](https://console.aws.amazon.com/sagemaker/home#/notebook-instances).
-1. Empty the contents of S3 bucket panorama-workshop-{account-id}.
+
+1. Empty the contents of following S3 path.
     ```
-    $ aws s3 rm s3://panorama-workshop-{account-id} --recursive
+    $ aws s3 rm s3://sagemaker-{region}-{account-id}/panorama-workshop --recursive
     ```
+
 1. Delete the CloudFormation stack.
     ```
     $ aws cloudformation delete-stack --stack-name panorama-workshop-1
