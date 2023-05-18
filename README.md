@@ -10,19 +10,22 @@
     --stack-name panorama-workshop-1
     ```
 1. Visit [SageMaker Notebooks instances page](https://console.aws.amazon.com/sagemaker/home#/notebook-instances) and find "PanoramaWorkshop". Click "Open JupyterLab".
-1. From the file browser pane in left hand side, find "aws-panorama-immersion-day" directory, and double click it to see the contents of this repository.
-1. Open "setup-sm.ipynb". This notebook contains required environment setting steps.
-1. From menu bar, select "Run" > "Run All Cells"
+1. When you see the dialog ("Loading... The loading screen is taking a long time..."), please click "Keep Waiting" button, and wait until JupyterLab screen opens.
+
+    ![](images/loading_taking_time_dialog.png)
+
+1. Setup is continuing in the background. Please for the `"SETUP_COMPLETED.txt"` file to appear in the top level directory.
+
+    ![](images/setup_completed_file.png)
+
+## How to run the first lab
+
+1. In the file browser pane in left hand side, browse to `"aws-panorama-immersion-day/labs/1. Object detection"`, and open `"1. Object detection.ipynb"`.
+1. Open the [AWS Panorama Immersion Day - workshop studio](https://catalog.workshops.aws/panorama-immersion-day/en-US/20-lab1-object-detection) document, in a different browser window so that you can see the document and JupyterLab side-by-side.
+1. Follow the instructions in the workshop studio document, and execute the notebook step by step.
 
 
 ## How to clean up
-
-1. Stop the "PanoramaWorkshop" instance from [SageMaker Notebooks instances page](https://console.aws.amazon.com/sagemaker/home#/notebook-instances).
-
-1. Empty the contents of following S3 path.
-    ```
-    $ aws s3 rm s3://sagemaker-{region}-{account-id}/panorama-workshop --recursive
-    ```
 
 1. Delete the CloudFormation stack.
     ```
