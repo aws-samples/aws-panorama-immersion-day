@@ -14,7 +14,7 @@
 
     ![](images/loading_taking_time_dialog.png)
 
-1. Setup is continuing in the background. Please for the `"SETUP_COMPLETED.txt"` file to appear in the top level directory.
+1. Setup is continuing in the background. Please wait for the `"SETUP_COMPLETED.txt"` file to appear in the top level directory.
 
     ![](images/setup_completed_file.png)
 
