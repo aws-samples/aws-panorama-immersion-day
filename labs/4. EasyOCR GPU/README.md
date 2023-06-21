@@ -19,8 +19,8 @@ In Lab1 and Lab2, you have used a model that was compiled thru the Sagemaker Neo
 
 In lab4 and Lab4, you will be using frameworks like PyTorch and TensorRT directly on the Panorama device on a custom built container, without compiling these thru Neo 
 
-Please read Lab3 README.md from here for a more detailed understanding of this : "aws-panorama-immersion-day" >  "labs" > "3. Object Detection GPU" > "README.md"
-    
+Please read [Lab3 Workshop document](https://catalog.workshops.aws/panorama-immersion-day/en-US/40-lab3-object-detection-with-yolov5s-and-tensorrt/41-lab3) from here for a more detailed understanding of this.
+
 In this lab, we directly download the container artifacts and deploy to the device to save time. 
 
 * **Build and upload Container artifacts using panorama-cli build (Dont have to do this for this lab)**
